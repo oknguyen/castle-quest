@@ -1,26 +1,17 @@
-# Castle Runner
+# Castle Quest
 
-Next.js platformer kiểu Mario, chạy trên GitHub Pages.
+A canvas platformer for GitHub Pages.
 
-## Trò chơi
+## Play
 
-- Chạy ngang, nhảy qua hố, đạp quái.
-- Nhặt coin, lấy star power và thêm mạng.
-- Có checkpoint, cột cờ cuối màn và chế độ victory/gameover.
-- Tối ưu để deploy tĩnh lên GitHub Pages.
+- Move: `A/D` or arrow keys
+- Jump: `Space`, `W`, or arrow up
+- Run: `Shift`
+- Pause: `P` or `Esc`
+- Restart: `R`
 
-## Điều khiển
-
-- `A/D` hoặc `Arrow Left/Right`: di chuyển
-- `Space` / `W` / `Arrow Up`: nhảy
-- `Shift`: chạy nhanh
-- `P` hoặc `Esc`: pause
-- `R`: restart
+The game also includes touch controls for mobile.
 
 ## Deploy
 
-Workflow GitHub Actions nằm ở:
-
-- [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)
-
-Repo được cấu hình để export tĩnh qua Next.js và deploy lên Pages.
+The GitHub Actions workflow in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) builds the static Next.js export and deploys `out/` to GitHub Pages.

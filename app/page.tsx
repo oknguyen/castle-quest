@@ -1,5 +1,5 @@
-import CastleRunnerGame from "@/components/castle-runner";
+import CastleQuest from "@/components/castle-quest";
 
 export default function Home() {
-  return <CastleRunnerGame />;
+  return <CastleQuest />;
 }
