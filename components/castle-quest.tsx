@@ -372,7 +372,7 @@ function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 }
 
 function drawGame(ctx: CanvasRenderingContext2D, game: GameState, width: number, height: number, dpr: number) {
-  const scale = Math.max(width / 960, height / 720);
+  const scale = Math.min(width / 960, height / 720);
   const viewW = width / scale;
   const viewH = height / scale;
   const offsetY = (viewH - WORLD_H) * 0.5;
