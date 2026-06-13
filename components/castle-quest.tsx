@@ -10,7 +10,7 @@ type Rect = {
 };
 
 type Platform = Rect & {
-  kind: "grass" | "brick" | "pipe" | "castle";
+  kind: "grass" | "brick" | "pipe" | "castle" | "crystal" | "lava";
 };
 
 type Coin = {
@@ -46,7 +46,7 @@ type Player = Rect & {
   invincible: number;
 };
 
-type GameStatus = "playing" | "paused" | "won" | "lost";
+type GameStatus = "playing" | "paused" | "won" | "lost" | "levelup";
 
 type GameState = {
   player: Player;
@@ -61,6 +61,8 @@ type GameState = {
   enemies: Enemy[];
   coinsList: Coin[];
   pickups: Pickup[];
+  level: number;
+  levelTimer: number;
 };
 
 type Input = {
@@ -70,12 +72,95 @@ type Input = {
   run: boolean;
 };
 
-const WORLD_W = 5400;
 const WORLD_H = 720;
 const FLOOR_Y = 610;
-const GOAL_X = 5150;
 
-const platforms: Platform[] = [
+type LevelDef = {
+  worldW: number; goalX: number;
+  platforms: Platform[];
+  coins: [number, number][];
+  enemies: { x: number; y: number; minX: number; maxX: number }[];
+  pickups: { x: number; y: number; kind: "star" | "heart" }[];
+  skyTop: string; skyMid: string; skyBot: string;
+  sun: string; hill: string; mtn: string;
+  name: string;
+};
+
+const LEVELS: LevelDef[] = [
+  {
+    worldW: 5400, goalX: 5150, name: "Emerald Hills",
+    skyTop: "#7ed0ff", skyMid: "#bde9ff", skyBot: "#f8f0c5",
+    sun: "#fff7d6", hill: "#4ebc73", mtn: "#376aa0",
+    platforms: [
+      { x: 0, y: FLOOR_Y, w: 1040, h: 120, kind: "grass" },
+      { x: 1160, y: FLOOR_Y, w: 780, h: 120, kind: "grass" },
+      { x: 2140, y: FLOOR_Y, w: 880, h: 120, kind: "brick" },
+      { x: 3300, y: FLOOR_Y, w: 840, h: 120, kind: "grass" },
+      { x: 4260, y: FLOOR_Y, w: 1000, h: 120, kind: "castle" },
+      { x: 300, y: 520, w: 150, h: 32, kind: "brick" }, { x: 560, y: 450, w: 160, h: 32, kind: "brick" }, { x: 820, y: 380, w: 130, h: 32, kind: "brick" },
+      { x: 1320, y: 525, w: 150, h: 32, kind: "brick" }, { x: 1580, y: 450, w: 150, h: 32, kind: "brick" }, { x: 1850, y: 375, w: 130, h: 32, kind: "brick" },
+      { x: 2380, y: 520, w: 180, h: 32, kind: "brick" }, { x: 2660, y: 455, w: 170, h: 32, kind: "brick" }, { x: 2920, y: 385, w: 140, h: 32, kind: "brick" },
+      { x: 3480, y: 510, w: 180, h: 32, kind: "brick" }, { x: 3770, y: 430, w: 150, h: 32, kind: "brick" }, { x: 4020, y: 355, w: 140, h: 32, kind: "brick" },
+      { x: 4440, y: 520, w: 190, h: 32, kind: "brick" }, { x: 4740, y: 450, w: 160, h: 32, kind: "brick" }, { x: 5080, y: 380, w: 160, h: 32, kind: "brick" },
+      { x: 1050, y: 545, w: 82, h: 65, kind: "pipe" }, { x: 2040, y: 528, w: 90, h: 82, kind: "pipe" },
+      { x: 3180, y: 528, w: 90, h: 82, kind: "pipe" }, { x: 4200, y: 528, w: 90, h: 82, kind: "pipe" },
+    ],
+    coins: [[355,475],[620,405],[675,405],[865,335],[1370,480],[1635,405],[1900,330],[2440,475],[2500,475],[2730,410],[2990,340],[3530,465],[3820,385],[4080,310],[4510,475],[4810,405],[5140,335]],
+    enemies: [{ x:690,y:580,minX:530,maxX:980 },{ x:1470,y:580,minX:1180,maxX:1880 },{ x:2440,y:580,minX:2180,maxX:2960 },{ x:3600,y:580,minX:3320,maxX:4080 },{ x:4630,y:580,minX:4280,maxX:5180 }],
+    pickups: [{ x:1625,y:398,kind:"star" },{ x:3000,y:330,kind:"heart" },{ x:4800,y:398,kind:"star" }],
+  },
+  {
+    worldW: 6400, goalX: 6100, name: "Crystal Caverns",
+    skyTop: "#050318", skyMid: "#0e0840", skyBot: "#1a1060",
+    sun: "#7050ff", hill: "#1a2870", mtn: "#0a1040",
+    platforms: [
+      { x:0,y:FLOOR_Y,w:860,h:120,kind:"crystal" }, { x:1020,y:FLOOR_Y,w:620,h:120,kind:"crystal" },
+      { x:1860,y:FLOOR_Y,w:660,h:120,kind:"crystal" }, { x:2760,y:FLOOR_Y,w:640,h:120,kind:"crystal" },
+      { x:3660,y:FLOOR_Y,w:620,h:120,kind:"crystal" }, { x:4560,y:FLOOR_Y,w:620,h:120,kind:"crystal" },
+      { x:5440,y:FLOOR_Y,w:960,h:120,kind:"castle" },
+      { x:200,y:510,w:140,h:32,kind:"crystal" }, { x:440,y:440,w:130,h:32,kind:"crystal" }, { x:690,y:370,w:130,h:32,kind:"crystal" },
+      { x:1080,y:510,w:140,h:32,kind:"crystal" }, { x:1330,y:440,w:130,h:32,kind:"crystal" }, { x:1580,y:365,w:130,h:32,kind:"crystal" },
+      { x:1920,y:510,w:130,h:32,kind:"crystal" }, { x:2170,y:440,w:140,h:32,kind:"crystal" }, { x:2430,y:370,w:130,h:32,kind:"crystal" },
+      { x:2830,y:510,w:130,h:32,kind:"crystal" }, { x:3080,y:440,w:140,h:32,kind:"crystal" }, { x:3340,y:365,w:130,h:32,kind:"crystal" },
+      { x:3730,y:510,w:130,h:32,kind:"crystal" }, { x:3980,y:440,w:130,h:32,kind:"crystal" }, { x:4230,y:365,w:140,h:32,kind:"crystal" },
+      { x:4630,y:510,w:130,h:32,kind:"crystal" }, { x:4880,y:440,w:130,h:32,kind:"crystal" }, { x:5130,y:365,w:130,h:32,kind:"crystal" },
+      { x:870,y:540,w:88,h:72,kind:"pipe" }, { x:1820,y:530,w:88,h:82,kind:"pipe" }, { x:2720,y:528,w:88,h:82,kind:"pipe" },
+      { x:3620,y:530,w:88,h:82,kind:"pipe" }, { x:4510,y:530,w:88,h:82,kind:"pipe" },
+    ],
+    coins: [[210,460],[450,390],[700,320],[1090,460],[1340,390],[1590,315],[1930,460],[2180,390],[2440,320],[2840,460],[3090,390],[3350,315],[3740,460],[3990,390],[4240,315],[4640,460],[4890,390],[5140,315]],
+    enemies: [{ x:400,y:580,minX:10,maxX:820 },{ x:1300,y:580,minX:1030,maxX:1820 },{ x:2200,y:580,minX:1870,maxX:2720 },{ x:3100,y:580,minX:2770,maxX:3620 },{ x:4000,y:580,minX:3670,maxX:4520 },{ x:4900,y:580,minX:4570,maxX:5400 }],
+    pickups: [{ x:450,y:388,kind:"star" },{ x:2180,y:388,kind:"heart" },{ x:3990,y:388,kind:"star" }],
+  },
+  {
+    worldW: 7200, goalX: 6900, name: "Volcanic Fortress",
+    skyTop: "#0a0100", skyMid: "#300800", skyBot: "#601000",
+    sun: "#ff5010", hill: "#381008", mtn: "#200802",
+    platforms: [
+      { x:0,y:FLOOR_Y,w:780,h:120,kind:"lava" }, { x:940,y:FLOOR_Y,w:580,h:120,kind:"lava" },
+      { x:1740,y:FLOOR_Y,w:560,h:120,kind:"lava" }, { x:2560,y:FLOOR_Y,w:560,h:120,kind:"lava" },
+      { x:3360,y:FLOOR_Y,w:520,h:120,kind:"lava" }, { x:4160,y:FLOOR_Y,w:520,h:120,kind:"lava" },
+      { x:4960,y:FLOOR_Y,w:520,h:120,kind:"lava" }, { x:5760,y:FLOOR_Y,w:480,h:120,kind:"lava" },
+      { x:6400,y:FLOOR_Y,w:800,h:120,kind:"castle" },
+      { x:180,y:510,w:130,h:32,kind:"brick" }, { x:420,y:435,w:120,h:32,kind:"brick" }, { x:650,y:360,w:120,h:32,kind:"brick" },
+      { x:1000,y:510,w:130,h:32,kind:"brick" }, { x:1240,y:435,w:120,h:32,kind:"brick" }, { x:1480,y:360,w:120,h:32,kind:"brick" },
+      { x:1800,y:510,w:130,h:32,kind:"brick" }, { x:2040,y:435,w:120,h:32,kind:"brick" }, { x:2280,y:360,w:120,h:32,kind:"brick" },
+      { x:2620,y:510,w:130,h:32,kind:"brick" }, { x:2860,y:435,w:120,h:32,kind:"brick" }, { x:3100,y:360,w:120,h:32,kind:"brick" },
+      { x:3420,y:510,w:130,h:32,kind:"brick" }, { x:3660,y:435,w:120,h:32,kind:"brick" }, { x:3900,y:360,w:120,h:32,kind:"brick" },
+      { x:4220,y:510,w:130,h:32,kind:"brick" }, { x:4460,y:435,w:120,h:32,kind:"brick" }, { x:4700,y:360,w:120,h:32,kind:"brick" },
+      { x:5020,y:510,w:130,h:32,kind:"brick" }, { x:5260,y:435,w:120,h:32,kind:"brick" }, { x:5500,y:360,w:120,h:32,kind:"brick" },
+      { x:5820,y:510,w:130,h:32,kind:"brick" }, { x:6060,y:435,w:120,h:32,kind:"brick" }, { x:6300,y:360,w:120,h:32,kind:"brick" },
+      { x:860,y:538,w:88,h:74,kind:"pipe" }, { x:1700,y:530,w:88,h:82,kind:"pipe" }, { x:2500,y:528,w:88,h:82,kind:"pipe" },
+      { x:3300,y:528,w:88,h:82,kind:"pipe" }, { x:4100,y:528,w:88,h:82,kind:"pipe" }, { x:4900,y:528,w:88,h:82,kind:"pipe" },
+      { x:5700,y:528,w:88,h:82,kind:"pipe" },
+    ],
+    coins: [[190,460],[430,385],[660,310],[1010,460],[1250,385],[1490,310],[1810,460],[2050,385],[2290,310],[2630,460],[2870,385],[3110,310],[3430,460],[3670,385],[3910,310],[4230,460],[4470,385],[4710,310],[5030,460],[5270,385],[5510,310],[5830,460],[6070,385],[6310,310]],
+    enemies: [{ x:300,y:580,minX:10,maxX:740 },{ x:1100,y:580,minX:950,maxX:1700 },{ x:1900,y:580,minX:1750,maxX:2520 },{ x:2700,y:580,minX:2570,maxX:3320 },{ x:3500,y:580,minX:3370,maxX:4120 },{ x:4300,y:580,minX:4170,maxX:4920 },{ x:5100,y:580,minX:4970,maxX:5720 },{ x:5900,y:580,minX:5770,maxX:6360 }],
+    pickups: [{ x:430,y:383,kind:"star" },{ x:2870,y:383,kind:"heart" },{ x:5270,y:383,kind:"star" }],
+  },
+];
+
+function getLevelPlatforms(level: number): Platform[] { return LEVELS[level - 1].platforms; }
+
   { x: 0, y: FLOOR_Y, w: 1040, h: 120, kind: "grass" },
   { x: 1160, y: FLOOR_Y, w: 780, h: 120, kind: "grass" },
   { x: 2140, y: FLOOR_Y, w: 880, h: 120, kind: "brick" },
