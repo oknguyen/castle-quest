@@ -213,6 +213,9 @@ function hurt(game: GameState): GameState {
 }
 
 function stepGame(game: GameState, input: Input, dt: number): GameState {
+  if (game.status === "levelup") {
+    return makeGame(game.level + 1, game.score, game.coins, game.lives);
+  }
   if (game.status !== "playing") return game;
   const lv = LEVELS[game.level - 1];
   const platforms = lv.platforms;
