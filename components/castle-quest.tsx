@@ -161,108 +161,28 @@ const LEVELS: LevelDef[] = [
 
 function getLevelPlatforms(level: number): Platform[] { return LEVELS[level - 1].platforms; }
 
-  { x: 0, y: FLOOR_Y, w: 1040, h: 120, kind: "grass" },
-  { x: 1160, y: FLOOR_Y, w: 780, h: 120, kind: "grass" },
-  { x: 2140, y: FLOOR_Y, w: 880, h: 120, kind: "brick" },
-  { x: 3300, y: FLOOR_Y, w: 840, h: 120, kind: "grass" },
-  { x: 4260, y: FLOOR_Y, w: 1000, h: 120, kind: "castle" },
-  { x: 300, y: 520, w: 150, h: 32, kind: "brick" },
-  { x: 560, y: 450, w: 160, h: 32, kind: "brick" },
-  { x: 820, y: 380, w: 130, h: 32, kind: "brick" },
-  { x: 1320, y: 525, w: 150, h: 32, kind: "brick" },
-  { x: 1580, y: 450, w: 150, h: 32, kind: "brick" },
-  { x: 1850, y: 375, w: 130, h: 32, kind: "brick" },
-  { x: 2380, y: 520, w: 180, h: 32, kind: "brick" },
-  { x: 2660, y: 455, w: 170, h: 32, kind: "brick" },
-  { x: 2920, y: 385, w: 140, h: 32, kind: "brick" },
-  { x: 3480, y: 510, w: 180, h: 32, kind: "brick" },
-  { x: 3770, y: 430, w: 150, h: 32, kind: "brick" },
-  { x: 4020, y: 355, w: 140, h: 32, kind: "brick" },
-  { x: 4440, y: 520, w: 190, h: 32, kind: "brick" },
-  { x: 4740, y: 450, w: 160, h: 32, kind: "brick" },
-  { x: 5080, y: 380, w: 160, h: 32, kind: "brick" },
-  { x: 1050, y: 545, w: 82, h: 65, kind: "pipe" },
-  { x: 2040, y: 528, w: 90, h: 82, kind: "pipe" },
-  { x: 3180, y: 528, w: 90, h: 82, kind: "pipe" },
-  { x: 4200, y: 528, w: 90, h: 82, kind: "pipe" },
-];
-
-const coinSeeds = [
-  [355, 475],
-  [620, 405],
-  [675, 405],
-  [865, 335],
-  [1370, 480],
-  [1635, 405],
-  [1900, 330],
-  [2440, 475],
-  [2500, 475],
-  [2730, 410],
-  [2990, 340],
-  [3530, 465],
-  [3820, 385],
-  [4080, 310],
-  [4510, 475],
-  [4810, 405],
-  [5140, 335],
-];
-
-const enemySeeds = [
-  { x: 690, y: 580, minX: 530, maxX: 980 },
-  { x: 1470, y: 580, minX: 1180, maxX: 1880 },
-  { x: 2440, y: 580, minX: 2180, maxX: 2960 },
-  { x: 3600, y: 580, minX: 3320, maxX: 4080 },
-  { x: 4630, y: 580, minX: 4280, maxX: 5180 },
-];
-
-const pickupSeeds = [
-  { x: 1625, y: 398, kind: "star" as const },
-  { x: 3000, y: 330, kind: "heart" as const },
-  { x: 4800, y: 398, kind: "star" as const },
-];
 
 function makePlayer(x = 120, y = 520): Player {
+  return { x, y, w: 34, h: 48, vx: 0, vy: 0, face: 1, ground: false, coyote: 0, jumpBuffer: 0, invincible: 1 };
+}
+
+function makeGame(level = 1, score = 0, coins = 0, lives = 3): GameState {
+  const lv = LEVELS[level - 1];
+  const spd = 80 + (level - 1) * 20;
   return {
-    x,
-    y,
-    w: 34,
-    h: 48,
-    vx: 0,
-    vy: 0,
-    face: 1,
-    ground: false,
-    coyote: 0,
-    jumpBuffer: 0,
-    invincible: 1,
+    player: makePlayer(),
+    camera: 0, score, coins, lives,
+    time: 0, status: "playing",
+    message: `Level ${level}: ${lv.name}`,
+    checkpoint: 120,
+    level, levelTimer: 0,
+    enemies: lv.enemies.map((s, i) => ({ id: i + 1, x: s.x, y: s.y, w: 36, h: 30, vx: i % 2 === 0 ? spd : -spd, minX: s.minX, maxX: s.maxX, alive: true })),
+    coinsList: lv.coins.map(([x, y], i) => ({ id: i + 1, x, y, taken: false })),
+    pickups: lv.pickups.map((s, i) => ({ id: i + 1, ...s, taken: false })),
   };
 }
 
-function makeGame(): GameState {
-  return {
-    player: makePlayer(),
-    camera: 0,
-    score: 0,
-    coins: 0,
-    lives: 3,
-    time: 0,
-    status: "playing",
-    message: "Reach the castle gate.",
-    checkpoint: 120,
-    enemies: enemySeeds.map((seed, index) => ({
-      id: index + 1,
-      x: seed.x,
-      y: seed.y,
-      w: 36,
-      h: 30,
-      vx: index % 2 === 0 ? 80 : -80,
-      minX: seed.minX,
-      maxX: seed.maxX,
-      alive: true,
-    })),
-    coinsList: coinSeeds.map(([x, y], index) => ({ id: index + 1, x, y, taken: false })),
-    pickups: pickupSeeds.map((seed, index) => ({ id: index + 1, ...seed, taken: false })),
-  };
-}
+
 
 function overlaps(a: Rect, b: Rect) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -287,15 +207,15 @@ function hurt(game: GameState): GameState {
     ...game,
     lives,
     player: makePlayer(game.checkpoint, 520),
-    camera: clamp(game.checkpoint - 180, 0, WORLD_W),
+    camera: clamp(game.checkpoint - 180, 0, LEVELS[game.level - 1].worldW),
     message: "Checkpoint restored.",
   };
 }
 
 function stepGame(game: GameState, input: Input, dt: number): GameState {
   if (game.status !== "playing") return game;
-
-  const player = { ...game.player };
+  const lv = LEVELS[game.level - 1];
+  const platforms = lv.platforms;
   const enemies = game.enemies.map((enemy) => ({ ...enemy }));
   const coinsList = game.coinsList.map((coin) => ({ ...coin }));
   const pickups = game.pickups.map((pickup) => ({ ...pickup }));
@@ -354,7 +274,7 @@ function stepGame(game: GameState, input: Input, dt: number): GameState {
     }
   }
 
-  player.x = clamp(player.x, 0, WORLD_W - player.w);
+  player.x = clamp(player.x, 0, lv.worldW - player.w);
 
   if (player.y > WORLD_H + 160) {
     return hurt({ ...game, player, enemies, coinsList, pickups, score, coins, lives, checkpoint });
@@ -409,40 +329,16 @@ function stepGame(game: GameState, input: Input, dt: number): GameState {
   if (player.x > 4450) checkpoint = Math.max(checkpoint, 4450);
 
   score += Math.floor(Math.abs(player.vx) * dt * 0.08);
-  const camera = clamp(player.x - 420, 0, WORLD_W - 960);
+  const camera = clamp(player.x - 420, 0, lv.worldW - 960);
 
-  if (player.x > GOAL_X) {
-    return {
-      ...game,
-      player,
-      camera,
-      score: score + 1500 + lives * 300,
-      coins,
-      lives,
-      checkpoint,
-      enemies,
-      coinsList,
-      pickups,
-      time: game.time + dt,
-      status: "won",
-      message: "Castle rescued!",
-    };
+  if (player.x > lv.goalX) {
+    if (game.level >= LEVELS.length) {
+      return { ...game, player, camera, score: score + 1500 + lives * 300, coins, lives, checkpoint, enemies, coinsList, pickups, time: game.time + dt, status: "won", message: "You beat all levels!", levelTimer: 0 };
+    }
+    return { ...game, player, camera, score: score + 1000 + lives * 200, coins, lives, checkpoint, enemies, coinsList, pickups, time: game.time + dt, status: "levelup", message: `Level ${game.level + 1}: ${LEVELS[game.level].name}`, levelTimer: 0 };
   }
 
-  return {
-    ...game,
-    player,
-    camera,
-    score,
-    coins,
-    lives,
-    checkpoint,
-    enemies,
-    coinsList,
-    pickups,
-    time: game.time + dt,
-    message,
-  };
+  return { ...game, player, camera, score, coins, lives, checkpoint, enemies, coinsList, pickups, time: game.time + dt, message, levelTimer: 0 };
 }
 
 function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
