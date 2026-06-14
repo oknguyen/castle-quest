@@ -587,6 +587,7 @@ class Sfx {
   private ctx: AudioContext | null = null;
   private bgmInterval: ReturnType<typeof setInterval> | null = null;
   private lastStep = 0;
+  muted = false;
 
   private getCtx(): AudioContext {
     if (!this.ctx) this.ctx = new AudioContext();
@@ -598,6 +599,7 @@ class Sfx {
   }
 
   private tone(type: OscillatorType, freq: number, endFreq: number, duration: number, gain: number, delay = 0) {
+    if (this.muted) return;
     const ctx = this.getCtx();
     const t = ctx.currentTime + delay;
     const osc = ctx.createOscillator();
@@ -697,6 +699,15 @@ class Sfx {
       this.bgmInterval = null;
     }
   }
+
+  toggleMute() {
+    this.muted = !this.muted;
+    if (this.muted) {
+      this.stopBgm();
+    } else {
+      this.startBgm();
+    }
+  }
 }
 
 const sfx = new Sfx();
@@ -708,6 +719,17 @@ export default function CastleQuest() {
   const frameRef = useRef<number | null>(null);
   const lastRef = useRef<number | null>(null);
   const [hud, setHud] = useState(gameRef.current);
+  const [muted, setMuted] = useState(() => {
+    if (typeof localStorage === "undefined") return false;
+    return localStorage.getItem("castle-quest-muted") === "true";
+  });
+
+  const toggleMute = () => {
+    sfx.toggleMute();
+    const next = !muted;
+    setMuted(next);
+    localStorage.setItem("castle-quest-muted", String(next));
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -872,6 +894,9 @@ export default function CastleQuest() {
         </button>
         <button className="control" onClick={resetGame} aria-label="Restart">
           R
+        </button>
+        <button className="control" onClick={toggleMute} aria-label={muted ? "Unmute" : "Mute"}>
+          {muted ? "M" : "S"}
         </button>
       </div>
 
