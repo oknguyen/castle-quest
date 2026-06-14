@@ -700,14 +700,6 @@ class Sfx {
     }
   }
 
-  toggleMute() {
-    this.muted = !this.muted;
-    if (this.muted) {
-      this.stopBgm();
-    } else {
-      this.startBgm();
-    }
-  }
 }
 
 const sfx = new Sfx();
@@ -721,12 +713,16 @@ export default function CastleQuest() {
   const [hud, setHud] = useState(gameRef.current);
   const [muted, setMuted] = useState(() => {
     if (typeof localStorage === "undefined") return false;
-    return localStorage.getItem("castle-quest-muted") === "true";
+    const saved = localStorage.getItem("castle-quest-muted") === "true";
+    sfx.muted = saved;
+    if (saved) sfx.stopBgm();
+    return saved;
   });
 
   const toggleMute = () => {
-    sfx.toggleMute();
     const next = !muted;
+    sfx.muted = next;
+    if (next) sfx.stopBgm(); else sfx.startBgm();
     setMuted(next);
     localStorage.setItem("castle-quest-muted", String(next));
   };
