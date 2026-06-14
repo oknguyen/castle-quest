@@ -332,6 +332,7 @@ function stepGame(game: GameState, input: Input, dt: number): GameState {
       player.vy = -560;
       score += stomp ? 250 : 180;
       message = stomp ? "Stomp!" : "Invincible!";
+      sfx.stomp();
     } else {
       return hurt({ ...game, player, enemies, coinsList, pickups, score, coins, lives, checkpoint });
     }
@@ -346,8 +347,10 @@ function stepGame(game: GameState, input: Input, dt: number): GameState {
 
   if (player.x > lv.goalX) {
     if (game.level >= LEVELS.length) {
+      sfx.win();
       return { ...game, player, camera, score: score + 1500 + lives * 300, coins, lives, checkpoint, enemies, coinsList, pickups, time: game.time + dt, status: "won", message: "You beat all levels!", levelTimer: 0 };
     }
+    sfx.levelup();
     return { ...game, player, camera, score: score + 1000 + lives * 200, coins, lives, checkpoint, enemies, coinsList, pickups, time: game.time + dt, status: "levelup", message: `Level ${game.level + 1}: ${LEVELS[game.level].name}`, levelTimer: 0 };
   }
 
@@ -642,6 +645,23 @@ class Sfx {
   pickup() {
     this.tone("sine", 523, 1047, 0.2, 0.08);
     this.tone("sine", 784, 1568, 0.25, 0.06, 0.12);
+  }
+
+  stomp() {
+    this.tone("square", 200, 60, 0.15, 0.1);
+  }
+
+  levelup() {
+    this.tone("sine", 523, 784, 0.15, 0.1);
+    this.tone("sine", 659, 988, 0.15, 0.1, 0.15);
+    this.tone("sine", 784, 1175, 0.2, 0.1, 0.3);
+  }
+
+  win() {
+    this.tone("sine", 523, 784, 0.15, 0.1);
+    this.tone("sine", 659, 988, 0.15, 0.1, 0.15);
+    this.tone("sine", 784, 1175, 0.15, 0.1, 0.3);
+    this.tone("sine", 1047, 1568, 0.3, 0.1, 0.45);
   }
 
   keyP() {
